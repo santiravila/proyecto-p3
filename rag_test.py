@@ -144,7 +144,7 @@ def ask(query: str, collection: str = config.COLLECTION_NAME) -> str:
 # ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    pregunta = "¿Cómo se llama la ciudad?"
+    pregunta = "¿Qué es Static-X y qué pasó con la banda?"
 
     print(f"Pregunta: {pregunta}\n")
     respuesta = ask(pregunta)

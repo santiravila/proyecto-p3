@@ -16,7 +16,18 @@ def extract_text_from_pdf(pdf_path: str) -> str:
 
     for page_number in range(len(document)):
         page = document[page_number]
-        full_text += page.get_text()
+        page_text = page.get_text("text")
+
+        if isinstance(page_text, str):
+            full_text += page_text
+        elif isinstance(page_text, list):
+            full_text += "".join(str(item) for item in page_text)
+        elif isinstance(page_text, dict):
+            full_text += str(page_text)
+        else:
+            raise TypeError(
+                f"Unsupported text type returned from page.get_text: {type(page_text)}"
+            )
 
     return full_text
 
@@ -84,7 +95,7 @@ import ollama
 if __name__ == "__main__":
     print("Connecting to Qdrant (Port 6333)...")
     try:
-        client = QdrantClient(host="localhost", port=6333, timeout=3.0)
+        client = QdrantClient(host="localhost", port=6333, timeout=3)
         client.get_collections()
         print("QDRANT: Operational and listening.")
     except Exception as e:

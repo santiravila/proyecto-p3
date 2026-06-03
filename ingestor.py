@@ -1,15 +1,13 @@
 import os
 import uuid
 import logging
-import fitz  # PyMuPDF
+import fitz  
 import ollama
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-# ---------------------------------------------------------
 # 1. CONFIGURACIÓN GLOBAL (Constantes)
-# ---------------------------------------------------------
 QDRANT_HOST = "localhost"
 QDRANT_PORT = 6333
 COLLECTION_NAME = "profesor_ingles_rag"  
@@ -18,7 +16,7 @@ VECTOR_SIZE = 768  # Tamaño del vector para nomic-embed-text
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 150
 
-# Configuración del Logger (Mejor práctica en lugar de usar print)
+# Configuración del Logger (mejor que usar print)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -26,9 +24,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------
-# 2. CLASE: Procesador de Documentos
-# ---------------------------------------------------------
+# Procesador de Documentos
 class DocumentProcessor:
     """Se encarga de extraer y fragmentar el texto de los PDFs."""
     
@@ -46,7 +42,7 @@ class DocumentProcessor:
         logger.info(f"Extrayendo texto de: {os.path.basename(pdf_path)}")
         try:
             document = fitz.open(pdf_path)
-            full_text = "".join([page.get_text() for page in document])
+            full_text = "".join(str(page.get_text("text") or "") for page in document)
             return full_text
         except Exception as e:
             logger.error(f"Error al procesar el PDF: {e}")
@@ -58,9 +54,7 @@ class DocumentProcessor:
         logger.info(f"Texto dividido exitosamente en {len(chunks)} fragmentos.")
         return chunks
 
-# ---------------------------------------------------------
-# 3. CLASE: Gestor de Base de Datos Vectorial (Qdrant)
-# ---------------------------------------------------------
+# Gestor de Base de Datos Vectorial (Qdrant)
 class VectorDBManager:
     """Se encarga de la conexión a Qdrant y la ingesta de vectores."""
     
@@ -84,7 +78,7 @@ class VectorDBManager:
         points = []
         for chunk in chunks:
             try:
-                # Generación del embedding (vector de números)
+                # Generación del embedding 
                 response = ollama.embeddings(model=EMBEDDING_MODEL, prompt=chunk)
                 
                 # Creación de un UUID real para no sobreescribir datos de otros PDFs
@@ -111,9 +105,7 @@ class VectorDBManager:
         else:
             logger.warning("No se generaron puntos para subir.")
 
-# ---------------------------------------------------------
-# 4. PIPELINE PRINCIPAL (Orquestador)
-# ---------------------------------------------------------
+# PIPELINE PRINCIPAL
 class RAGIngestionPipeline:
     """Orquesta el flujo completo: Leer -> Fragmentar -> Vectorizar -> Subir"""
     
@@ -137,11 +129,9 @@ class RAGIngestionPipeline:
         
         logger.info("=== PIPELINE FINALIZADO ===")
 
-# ---------------------------------------------------------
 # PUNTO DE ENTRADA (Main)
-# ---------------------------------------------------------
 if __name__ == "__main__":
-    # Ruta del archivo que vas a leer (Asegúrate de poner un PDF real aquí)
+    # Ruta del archivo a leer 
     PDF_FILE_PATH = "./documentos/test.pdf" 
     
     pipeline = RAGIngestionPipeline()
