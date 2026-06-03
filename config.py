@@ -1,7 +1,7 @@
 # ── Base de datos vectorial ──────────────────────────────────
 QDRANT_HOST     = "localhost"
 QDRANT_PORT     = 6333
-COLLECTION_NAME = "asistente_transito"
+COLLECTION_NAME = "transito_colombia"
 VECTOR_SIZE     = 768         
 
 # ── Modelos Ollama ───────────────────────────────────────────

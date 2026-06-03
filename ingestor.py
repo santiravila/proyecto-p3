@@ -3,18 +3,11 @@ import uuid
 import logging
 import fitz  
 import ollama
+import config
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-# 1. CONFIGURACIÓN GLOBAL (Constantes)
-QDRANT_HOST = "localhost"
-QDRANT_PORT = 6333
-COLLECTION_NAME = "profesor_ingles_rag"  
-EMBEDDING_MODEL = "nomic-embed-text"
-VECTOR_SIZE = 768  # Tamaño del vector para nomic-embed-text
-CHUNK_SIZE = 1000
-CHUNK_OVERLAP = 150
 
 # Configuración del Logger (mejor que usar print)
 logging.basicConfig(
@@ -28,7 +21,7 @@ logger = logging.getLogger(__name__)
 class DocumentProcessor:
     """Se encarga de extraer y fragmentar el texto de los PDFs."""
     
-    def __init__(self, chunk_size: int = CHUNK_SIZE, chunk_overlap: int = CHUNK_OVERLAP):
+    def __init__(self, chunk_size: int = config.CHUNK_SIZE, chunk_overlap: int = config.CHUNK_OVERLAP):
         self.splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap
@@ -58,7 +51,7 @@ class DocumentProcessor:
 class VectorDBManager:
     """Se encarga de la conexión a Qdrant y la ingesta de vectores."""
     
-    def __init__(self, host: str = QDRANT_HOST, port: int = QDRANT_PORT):
+    def __init__(self, host: str = config.QDRANT_HOST, port: int = config.QDRANT_PORT):
         logger.info(f"Conectando a Qdrant en {host}:{port}...")
         self.client = QdrantClient(host=host, port=port)
         
@@ -67,19 +60,19 @@ class VectorDBManager:
             logger.info(f"Creando colección '{collection_name}' en Qdrant...")
             self.client.create_collection(
                 collection_name=collection_name,
-                vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE)
+                vectors_config=VectorParams(size=config.VECTOR_SIZE, distance=Distance.COSINE)
             )
         else:
             logger.info(f"La colección '{collection_name}' ya existe. Se agregarán nuevos datos.")
 
     def upload_chunks(self, chunks: list[str], collection_name: str, source_filename: str):
-        logger.info(f"Generando embeddings usando Ollama (Modelo: {EMBEDDING_MODEL})...")
+        logger.info(f"Generando embeddings usando Ollama (Modelo: {config.EMBED_MODEL})...")
         
         points = []
         for chunk in chunks:
             try:
                 # Generación del embedding 
-                response = ollama.embeddings(model=EMBEDDING_MODEL, prompt=chunk)
+                response = ollama.embeddings(model=config.EMBED_MODEL, prompt=chunk)
                 
                 # Creación de un UUID real para no sobreescribir datos de otros PDFs
                 point_id = str(uuid.uuid4()) 
@@ -113,7 +106,7 @@ class RAGIngestionPipeline:
         self.doc_processor = DocumentProcessor()
         self.db_manager = VectorDBManager()
 
-    def run(self, pdf_path: str, collection_name: str = COLLECTION_NAME):
+    def run(self, pdf_path: str, collection_name: str = config.COLLECTION_NAME):
         logger.info("=== INICIANDO PIPELINE DE INGESTA ===")
         
         # 1. Preparar Base de Datos
@@ -132,7 +125,7 @@ class RAGIngestionPipeline:
 # PUNTO DE ENTRADA (Main)
 if __name__ == "__main__":
     # Ruta del archivo a leer 
-    PDF_FILE_PATH = "./documentos/test.pdf" 
+    PDF_FILE_PATH = "./documentos/transito_colombia.pdf" 
     
     pipeline = RAGIngestionPipeline()
     
